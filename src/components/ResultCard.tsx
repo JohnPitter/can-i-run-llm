@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   CheckCircle2, AlertTriangle, XCircle, Gauge, MemoryStick,
-  ChevronDown, Info, Cpu, Monitor, Layers, ExternalLink, Terminal, Download,
+  ChevronDown, Info, Cpu, Monitor, Layers, ExternalLink, Terminal, Download, Copy, Check,
 } from 'lucide-react';
 import { type ModelResult, type Verdict, getAllResultsForModel } from '../engine/calculator';
 import { type HardwareSpecs } from '../engine/calculator';
@@ -55,6 +55,119 @@ function TPSBar({ tps }: { tps: number }) {
         />
       </div>
       <span className="text-[13px] font-mono font-bold text-white w-16 text-right">{tps} t/s</span>
+    </div>
+  );
+}
+
+// Generate search-friendly name for GGUF search on HuggingFace
+function getGGUFSearchUrl(modelName: string): string {
+  // Extract clean name for search: "Llama 3.1 8B" from various formats
+  const cleanName = modelName
+    .replace(/\([^)]*\)/g, '')  // remove (8.0B)
+    .replace(/instruct|chat|base|it$/gi, '')
+    .trim();
+  const searchTerm = encodeURIComponent(cleanName + ' GGUF');
+  return `https://huggingface.co/models?search=${searchTerm}&sort=downloads`;
+}
+
+function getOllamaSearchUrl(modelName: string): string {
+  const terms = modelName.toLowerCase()
+    .replace(/\([^)]*\)/g, '')
+    .replace(/instruct|chat|base|it$/gi, '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .join('+');
+  return `https://ollama.com/search?q=${terms}`;
+}
+
+function getOllamaCommand(parsedModel?: ParsedModel, modelName?: string): string | null {
+  if (parsedModel?.ollamaName) return `ollama run ${parsedModel.ollamaName}`;
+
+  // Try to infer from model name
+  const name = modelName?.toLowerCase() ?? '';
+  if (name.includes('llama') && name.includes('8b')) return 'ollama run llama3.1:8b';
+  if (name.includes('llama') && name.includes('70b')) return 'ollama run llama3.1:70b';
+  if (name.includes('qwen') && name.includes('7b')) return 'ollama run qwen2.5:7b';
+  if (name.includes('qwen') && name.includes('14b')) return 'ollama run qwen2.5:14b';
+  if (name.includes('qwen') && name.includes('32b')) return 'ollama run qwen2.5:32b';
+  if (name.includes('gemma') && name.includes('4b')) return 'ollama run gemma3:4b';
+  if (name.includes('gemma') && name.includes('12b')) return 'ollama run gemma3:12b';
+  if (name.includes('gemma') && name.includes('27b')) return 'ollama run gemma3:27b';
+  if (name.includes('mistral') && name.includes('7b')) return 'ollama run mistral';
+  if (name.includes('phi') && name.includes('14b')) return 'ollama run phi4';
+  if (name.includes('deepseek') && name.includes('r1')) return 'ollama run deepseek-r1';
+  return null;
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex-shrink-0 p-1 rounded-[1px] hover:bg-nv-gray-800 transition-colors"
+      title="Copiar comando"
+    >
+      {copied ? <Check className="w-3 h-3 text-nv-green" /> : <Copy className="w-3 h-3 text-nv-gray-500 hover:text-nv-gray-300" />}
+    </button>
+  );
+}
+
+function DownloadLinks({ modelName, quantName, parsedModel }: { modelName: string; quantName: string; parsedModel?: ParsedModel }) {
+  const cleanName = modelName.replace(/\([^)]*\)/g, '').trim();
+  const hfUrl = parsedModel?.hfUrl ?? `https://huggingface.co/models?search=${encodeURIComponent(cleanName)}`;
+  const ggufUrl = getGGUFSearchUrl(modelName);
+  const ollamaUrl = getOllamaSearchUrl(modelName);
+  const ollamaCmd = getOllamaCommand(parsedModel, modelName);
+
+  return (
+    <div className="mt-3 space-y-2">
+      {/* Download links row */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] sm:text-[11px] font-bold">
+        <a
+          href={hfUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-nv-gray-400 hover:text-nv-teal transition-colors underline decoration-nv-green/50 decoration-[1.5px] underline-offset-2"
+        >
+          <Download className="w-3 h-3" /> Modelo
+          <ExternalLink className="w-2.5 h-2.5" />
+        </a>
+        <a
+          href={ggufUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-nv-gray-400 hover:text-nv-teal transition-colors underline decoration-nv-green/50 decoration-[1.5px] underline-offset-2"
+        >
+          <Download className="w-3 h-3" /> GGUF ({quantName})
+          <ExternalLink className="w-2.5 h-2.5" />
+        </a>
+        <a
+          href={ollamaUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-nv-gray-400 hover:text-nv-teal transition-colors underline decoration-nv-green/50 decoration-[1.5px] underline-offset-2"
+        >
+          <Terminal className="w-3 h-3" /> Ollama
+          <ExternalLink className="w-2.5 h-2.5" />
+        </a>
+      </div>
+
+      {/* Ollama command with copy */}
+      {ollamaCmd && (
+        <div className="flex items-center gap-2 bg-nv-near-black/80 border border-nv-gray-800 rounded-[1px] px-2.5 py-1.5 w-fit max-w-full">
+          <Terminal className="w-3 h-3 text-nv-green flex-shrink-0" />
+          <code className="text-[10px] sm:text-[11px] font-mono text-nv-green truncate">$ {ollamaCmd}</code>
+          <CopyButton text={ollamaCmd} />
+        </div>
+      )}
     </div>
   );
 }
@@ -150,26 +263,12 @@ export function ResultCard({ result, specs, contextLength, index, parsedModel }:
               </div>
             )}
 
-            {/* Links */}
-            {parsedModel && (
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] font-bold">
-                <a
-                  href={parsedModel.hfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-nv-gray-400 hover:text-nv-teal transition-colors underline decoration-nv-green decoration-2 underline-offset-2"
-                >
-                  <Download className="w-3 h-3" /> Hugging Face
-                  <ExternalLink className="w-2.5 h-2.5" />
-                </a>
-                {parsedModel.ollamaName && (
-                  <span className="flex items-center gap-1.5 text-nv-gray-500 font-mono text-[10px]">
-                    <Terminal className="w-3 h-3 text-nv-green" />
-                    ollama run {parsedModel.ollamaName}
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Download links */}
+            <DownloadLinks
+              modelName={result.model.name}
+              quantName={result.quantization.name}
+              parsedModel={parsedModel}
+            />
           </div>
         </div>
       </div>
