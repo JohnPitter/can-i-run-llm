@@ -76,24 +76,46 @@ export function ResultsPanel({ results, specs, contextLength, parsedModels }: Re
 
   return (
     <div className="w-full space-y-6">
-      {/* Summary */}
+      {/* Summary with stats */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-nv-card border-2 border-nv-green/30 rounded-[2px] p-5 flex items-start gap-4"
+        className="bg-nv-card border-2 border-nv-green/30 rounded-[2px] p-4 sm:p-5 space-y-4"
       >
-        <BarChart3 className="w-5 h-5 text-nv-green flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-[14px] font-medium text-white leading-relaxed">
-            Sua maquina roda{' '}
-            <span className="font-bold text-nv-green">{stats.great} modelos</span> com boa performance
-            {stats.slow > 0 && <>, <span className="font-bold text-nv-yellow">{stats.slow}</span> de forma lenta</>}
-            {stats.barely > 0 && <> e <span className="font-bold text-nv-red">{stats.barely}</span> com dificuldade</>}
-            .
-          </p>
-          <p className="text-[11px] text-nv-gray-500 font-mono mt-1">
-            {stats.total} combinacoes analisadas | Dados atualizados do Hugging Face
-          </p>
+        <div className="flex items-start gap-3 sm:gap-4">
+          <BarChart3 className="w-5 h-5 text-nv-green flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] sm:text-[14px] font-medium text-white leading-relaxed">
+              Sua maquina roda{' '}
+              <span className="font-bold text-nv-green">{stats.great} modelos</span> com boa performance
+              {stats.slow > 0 && <>, <span className="font-bold text-nv-yellow">{stats.slow}</span> de forma lenta</>}
+              {stats.barely > 0 && <> e <span className="font-bold text-nv-red">{stats.barely}</span> com dificuldade</>}
+              .
+            </p>
+            <p className="text-[10px] sm:text-[11px] text-nv-gray-500 font-mono mt-1">
+              {stats.total} combinacoes analisadas | Dados atualizados do Hugging Face
+            </p>
+          </div>
+        </div>
+
+        {/* Quick stat counters */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="bg-nv-black/50 border border-nv-gray-800 rounded-[2px] px-3 py-2 text-center">
+            <div className="text-[18px] sm:text-[22px] font-black font-mono text-nv-green">{stats.great}</div>
+            <div className="text-[9px] font-bold uppercase tracking-wider text-nv-gray-500 mt-0.5">Bom+</div>
+          </div>
+          <div className="bg-nv-black/50 border border-nv-gray-800 rounded-[2px] px-3 py-2 text-center">
+            <div className="text-[18px] sm:text-[22px] font-black font-mono text-nv-yellow">{stats.slow}</div>
+            <div className="text-[9px] font-bold uppercase tracking-wider text-nv-gray-500 mt-0.5">Lento</div>
+          </div>
+          <div className="bg-nv-black/50 border border-nv-gray-800 rounded-[2px] px-3 py-2 text-center">
+            <div className="text-[18px] sm:text-[22px] font-black font-mono text-nv-red">{stats.barely}</div>
+            <div className="text-[9px] font-bold uppercase tracking-wider text-nv-gray-500 mt-0.5">Ruim</div>
+          </div>
+          <div className="bg-nv-black/50 border border-nv-gray-800 rounded-[2px] px-3 py-2 text-center">
+            <div className="text-[18px] sm:text-[22px] font-black font-mono text-white">{stats.total}</div>
+            <div className="text-[9px] font-bold uppercase tracking-wider text-nv-gray-500 mt-0.5">Total</div>
+          </div>
         </div>
       </motion.div>
 

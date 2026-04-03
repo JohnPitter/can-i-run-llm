@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { ChevronDown, Cpu, MemoryStick, Zap, Monitor } from 'lucide-react';
 import { HardwareForm } from './components/HardwareForm';
 import { ResultsPanel } from './components/ResultsPanel';
 import { InfoSection } from './components/InfoSection';
@@ -27,6 +28,22 @@ function convertParsedToLLM(parsed: ParsedModel): LLMModel {
   };
 }
 
+// Clean search query: remove "(8.0B)" style suffixes and normalize
+function cleanSearchQuery(query: string): string {
+  return query
+    .replace(/\([^)]*\)/g, '') // remove parentheses content
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Popular hardware presets
+const HARDWARE_PRESETS = [
+  { label: 'RTX 4090 + 32GB', icon: Monitor, specs: { ramGB: 32, hasGPU: true, gpuVramGB: 24, gpuBandwidthGBs: 1008, gpuBrand: 'NVIDIA' as const, isAppleSilicon: false, ramType: 'DDR5' as const, gpuCount: 1 } },
+  { label: 'RTX 3060 + 16GB', icon: Zap, specs: { ramGB: 16, hasGPU: true, gpuVramGB: 12, gpuBandwidthGBs: 360, gpuBrand: 'NVIDIA' as const, isAppleSilicon: false, ramType: 'DDR4' as const, gpuCount: 1 } },
+  { label: 'M4 Pro 24GB', icon: Cpu, specs: { ramGB: 24, hasGPU: true, gpuVramGB: 24, gpuBandwidthGBs: 273, gpuBrand: 'Apple' as const, isAppleSilicon: true, ramType: 'LPDDR5' as const, gpuCount: 1 } },
+  { label: 'Sem GPU 16GB', icon: MemoryStick, specs: { ramGB: 16, hasGPU: false, gpuVramGB: 0, gpuBandwidthGBs: 0, gpuBrand: 'none' as const, isAppleSilicon: false, ramType: 'DDR4' as const, gpuCount: 0 } },
+];
+
 function App() {
   const [results, setResults] = useState<ModelResult[] | null>(null);
   const [specs, setSpecs] = useState<HardwareSpecs | null>(null);
@@ -36,6 +53,7 @@ function App() {
   const [modelSource, setModelSource] = useState<'loading' | 'huggingface' | 'local'>('loading');
   const [parsedModelsMap, setParsedModelsMap] = useState<Map<string, ParsedModel>>(new Map());
   const resultsRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
   const heroScale = useTransform(scrollY, [0, 300], [1, 0.97]);
@@ -70,14 +88,17 @@ function App() {
     let models = getAllModels();
 
     if (modelQuery) {
-      const terms = modelQuery.toLowerCase().split(/\s+/);
-      models = models.filter(m =>
-        terms.every(t =>
-          m.name.toLowerCase().includes(t) ||
-          m.family.toLowerCase().includes(t) ||
-          m.id.toLowerCase().includes(t)
-        )
-      );
+      const cleaned = cleanSearchQuery(modelQuery);
+      if (cleaned) {
+        const terms = cleaned.toLowerCase().split(/\s+/);
+        models = models.filter(m =>
+          terms.every(t =>
+            m.name.toLowerCase().includes(t) ||
+            m.family.toLowerCase().includes(t) ||
+            m.id.toLowerCase().includes(t)
+          )
+        );
+      }
     }
 
     const topResults = getTopResults(newSpecs, models, QUANTIZATIONS, ctx);
@@ -85,6 +106,13 @@ function App() {
     setSpecs(newSpecs);
     setContextLength(ctx);
 
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  function handlePreset(preset: typeof HARDWARE_PRESETS[0]) {
+    handleAnalyze(preset.specs, 8192, '');
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
@@ -98,10 +126,8 @@ function App() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-nv-black/95 backdrop-blur-sm border-b-2 border-nv-gray-800">
         <div className="px-4 sm:px-6 lg:px-10 h-12 sm:h-14 flex items-center justify-between gap-4">
-          {/* Mobile: just logo icon. Desktop: full brand */}
           <div className="hidden sm:block"><BrandMark /></div>
           <div className="sm:hidden"><Logo size="sm" /></div>
-
           <div className="flex items-center gap-2 sm:gap-4">
             {modelSource === 'loading' ? (
               <span className="text-[10px] font-bold uppercase tracking-wider text-nv-gray-500 flex items-center gap-2">
@@ -127,7 +153,7 @@ function App() {
           <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-nv-green/10 to-transparent" />
         </div>
 
-        <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-14 lg:pt-16 pb-8 sm:pb-12 text-center">
+        <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-14 lg:pt-16 pb-6 sm:pb-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -144,7 +170,7 @@ function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-[32px] sm:text-[48px] md:text-[56px] lg:text-[72px] font-black tracking-tight leading-[1.05]"
+            className="text-[32px] sm:text-[48px] md:text-[56px] lg:text-[64px] font-black tracking-tight leading-[1.05]"
           >
             <span className="text-white">CAN I RUN </span>
             <span className="text-gradient-green text-glow-green">LLM</span>
@@ -155,32 +181,63 @@ function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-4 sm:mt-5 text-[14px] sm:text-[15px] md:text-[17px] text-nv-gray-300 max-w-2xl mx-auto leading-[1.6] font-medium px-2"
+            className="mt-4 sm:mt-5 text-[14px] sm:text-[15px] md:text-[16px] text-nv-gray-300 max-w-xl mx-auto leading-[1.6] font-medium px-2"
           >
             Descubra quais modelos de IA open-source rodam na sua maquina
             com estimativas de <span className="text-nv-green font-bold">velocidade</span> e <span className="text-nv-green font-bold">memoria</span>.
           </motion.p>
 
+          {/* Quick presets */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-6 sm:mt-8 flex flex-wrap justify-center gap-2 sm:gap-3"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-wider text-nv-gray-500 self-center mr-1">Teste rapido:</span>
+            {HARDWARE_PRESETS.map(preset => {
+              const Icon = preset.icon;
+              return (
+                <button
+                  key={preset.label}
+                  onClick={() => handlePreset(preset)}
+                  disabled={isLoadingModels}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-nv-gray-700 rounded-[2px] text-[11px] font-bold text-nv-gray-400 hover:border-nv-green hover:text-nv-green transition-all disabled:opacity-50"
+                >
+                  <Icon className="w-3 h-3" />
+                  {preset.label}
+                </button>
+              );
+            })}
+          </motion.div>
+
+          {/* Scroll indicator — bigger and more visible */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="mt-6 sm:mt-8"
+            className="mt-8 sm:mt-10 flex flex-col items-center gap-2"
+            onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth' })}
           >
+            <span className="text-[10px] font-bold uppercase tracking-wider text-nv-gray-500">Configurar hardware</span>
             <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              className="w-px h-8 sm:h-10 mx-auto bg-gradient-to-b from-nv-green to-transparent"
-            />
+              animate={{ y: [0, 6, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <ChevronDown className="w-5 h-5 text-nv-green" />
+            </motion.div>
           </motion.div>
         </div>
       </motion.header>
 
-      {/* Main content — form always in same tree position to preserve state */}
+      {/* Main content */}
       <section ref={resultsRef} className="px-4 sm:px-6 lg:px-10 pb-16 sm:pb-20">
-        <div className={`flex flex-col items-start ${hasResults ? 'xl:flex-row gap-6 lg:gap-8' : 'max-w-4xl mx-auto xl:max-w-none'}`}>
-          {/* Form — sticky sidebar when results exist */}
-          <div className={hasResults ? 'w-full xl:w-[400px] 2xl:w-[440px] xl:flex-shrink-0 xl:sticky xl:top-[64px] xl:max-h-[calc(100vh-80px)] xl:overflow-y-auto xl:dropdown-scroll' : 'w-full'}>
+        <div ref={formRef} className={`flex flex-col items-start ${hasResults ? 'xl:flex-row gap-6 lg:gap-8' : ''}`}>
+          {/* Form */}
+          <div className={hasResults
+            ? 'w-full xl:w-[400px] 2xl:w-[440px] xl:flex-shrink-0 xl:sticky xl:top-[64px] xl:max-h-[calc(100vh-80px)] xl:overflow-y-auto xl:dropdown-scroll'
+            : 'w-full max-w-5xl mx-auto'
+          }>
             <HardwareForm onAnalyze={handleAnalyze} isLoading={isLoadingModels} availableModels={availableModelNames} />
           </div>
           {/* Results */}
