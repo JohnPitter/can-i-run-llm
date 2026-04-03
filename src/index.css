@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+}
+
+@theme {
+  --font-sans: 'Inter', Arial, Helvetica, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+  /* NVIDIA-inspired palette */
+  --color-nv-green: #76b900;
+  --color-nv-green-light: #bff230;
+  --color-nv-green-dark: #3f8500;
+  --color-nv-black: #000000;
+  --color-nv-white: #ffffff;
+  --color-nv-near-black: #1a1a1a;
+  --color-nv-card: #111111;
+  --color-nv-card-hover: #1a1a1a;
+  --color-nv-surface: #0a0a0a;
+
+  /* Neutrals */
+  --color-nv-gray-300: #a7a7a7;
+  --color-nv-gray-400: #898989;
+  --color-nv-gray-500: #757575;
+  --color-nv-gray-600: #5e5e5e;
+  --color-nv-gray-700: #404040;
+  --color-nv-gray-800: #2a2a2a;
+
+  /* Semantic */
+  --color-nv-red: #e52020;
+  --color-nv-orange: #df6500;
+  --color-nv-yellow: #ef9100;
+  --color-nv-blue: #3860be;
+  --color-nv-teal: #1eaedb;
+  --color-nv-purple: #4d1368;
+  --color-nv-fuchsia: #8c1c55;
+
+  /* Status */
+  --color-status-great: #76b900;
+  --color-status-ok: #3f8500;
+  --color-status-slow: #ef9100;
+  --color-status-bad: #e52020;
+  --color-status-info: #3860be;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2a transparent;
+}
+
+::selection {
+  background-color: rgba(118, 185, 0, 0.3);
+  color: #ffffff;
+}
+
+body {
+  margin: 0;
+  background-color: #000000;
+  color: #ffffff;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Grid background pattern */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(118, 185, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(118, 185, 0, 0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* Glow effects */
+.glow-green {
+  box-shadow: 0 0 30px rgba(118, 185, 0, 0.15), 0 0 60px rgba(118, 185, 0, 0.05);
+}
+
+.glow-green-sm {
+  box-shadow: 0 0 15px rgba(118, 185, 0, 0.1);
+}
+
+.text-glow-green {
+  text-shadow: 0 0 40px rgba(118, 185, 0, 0.3);
+}
+
+/* Gradient text */
+.text-gradient-green {
+  background: linear-gradient(135deg, #76b900, #bff230);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Scan line effect */
+.scanline::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(118, 185, 0, 0.01) 2px,
+    rgba(118, 185, 0, 0.01) 4px
+  );
+  pointer-events: none;
+}
+
+/* Card hover glow */
+.card-glow {
+  position: relative;
+}
+.card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(118, 185, 0, 0.2), transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.card-glow:hover::before {
+  opacity: 1;
+}
+
+/* Pulse animation for loading */
+@keyframes pulse-green {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.animate-pulse-green {
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+/* Matrix rain effect (decorative) */
+@keyframes matrix-fall {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* GPU chip shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(118, 185, 0, 0.05) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Custom scrollbar for dropdown */
+.dropdown-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.dropdown-scroll::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+.dropdown-scroll::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 2px;
+}
